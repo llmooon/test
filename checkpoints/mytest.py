@@ -49,6 +49,7 @@ RECORD_DURATION_SECONDS = 5
 
 def check_mic_works():
     temp_file, temp_path = tempfile.mkstemp(suffix='.wav')
+    print(temp_file,temp_path)
     os.close(temp_file)
 
 
@@ -64,7 +65,6 @@ def check_mic_works():
         # Request parameters
         'shortAudio': 'true',
     })
-
     
 
 #    try:
