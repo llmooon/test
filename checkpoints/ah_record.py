@@ -28,7 +28,7 @@ import traceback
 import wave
 import base64
 import http.client, urllib.request, urllib.parse, urllib.error, base64
-
+import time
 import aiy.audio  # noqa
 from aiy._drivers._hat import get_aiy_device_name
 
@@ -46,6 +46,12 @@ TEST_SOUND_PATH = '/usr/share/sounds/alsa/Front_Center.wav'
 
 RECORD_DURATION_SECONDS = 5
 
+ah = '3fa2f6d6-d7c2-4799-b97c-8b5789f9c898'
+bh = 'df211582-f284-42ef-b676-2a0592b45783'
+ma =  'f07dce9f-0f84-43dd-85e7-592ea4a9d0e0'
+yj =  '4338b960-0de8-413e-b22b-8e3630f8553f'
+
+
 
 def check_mic_works():
     temp_file, temp_path = tempfile.mkstemp(suffix='.wav')
@@ -58,7 +64,10 @@ def check_mic_works():
         # Request headers
         #'Content-Type': 'multipart/form-data',
         'Content-type': 'multipart/form-data', 'Sample-Rate':'16000',
-        'Ocp-Apim-Subscription-Key': 'ab53cbba29934842bc35323cb33ca3db',
+        'Ocp-Apim-Subscription-Key': 'b7a5dab14dd54627b39b00a4e0a8d051',
+    }
+    headers2={
+        'Ocp-Apim-Subscription-Key':'b7a5dab14dd54627b39b00a4e0a8d051'
     }
 
     params = urllib.parse.urlencode({
@@ -68,19 +77,47 @@ def check_mic_works():
     
 
 #    try:
-    input("When you're ready, press enter and say 'Testing, 1 2 3'...")
+    num = int(input("Input user"))
+    user_hash_code = ''
+    if num==1 :
+        user_hash_code = ah
+    if num==2 :
+        user_hash_code=bh
+    if num==3 :
+        user_hash_code=ma
+    if num==4 :
+        user_hash_code=yj
+
+
+
     print('Recording...')
     aiy.audio.record_to_wave(temp_path, RECORD_DURATION_SECONDS)
 
     try:
-        conn = http.client.HTTPSConnection('westus.api.cognitive.microsoft.com')
+        url='westus.api.cognitive.microsoft.com'
+        conn = http.client.HTTPSConnection(url)
         body = open(temp_path,'rb')
-        conn.request("POST", "/spid/v1.0/identificationProfiles/352ece55-6d78-4bf9-a824-47717efabf06/enroll?%s" % params, body, headers)
+        print(user_hash_code)
+        conn.request("POST", "/spid/v1.0/identificationProfiles/"+user_hash_code+"/enroll?%s" % params, body, headers)
         response = conn.getresponse()
         print(response.status)
-        data = response.read()
-        print(data)
+        #print(response.headers)
+        #data = response.read()
+        #print(data)
+        print(response.headers.get("Operation-Location"))
         conn.close()
+        time.sleep(3)
+        conn = http.client.HTTPSConnection(url)
+        next_string = response.headers.get("Operation-Location")
+        next_string = next_string[len(url)+8:]
+        print(next_string)
+        
+        conn.request("GET",next_string,"body",headers2)
+        response=conn.getresponse()
+        print(response.status)
+        print(response.read())
+        conn.close()
+
     except Exception as e:
          print("[Errno {0}] {1}".format(e.errno, e.strerror))
 
